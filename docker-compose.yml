@@ -1,0 +1,147 @@
+services:
+  vpn:
+    image: thrnz/docker-wireguard-pia
+    volumes:
+      - ./pia:/pia
+      - ./pia-shared:/pia-shared
+      - ./script.sh:/script.sh
+    ports:
+      - 8082:8082
+      - 7878:7878
+      - 9696:9696
+      - 8989:8989
+      - 5055:5055
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - LOCAL_NETWORK=192.168.0.0/24
+      - LOC=${PIA_LOC}
+      - USER=${PIA_USER}
+      - PASS=${PIA_PASS}
+      - PORT_FORWARDING=1
+      - KEEPALIVE=25
+      - PORT_PERSIST=1
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.default.disable_ipv6=1
+      - net.ipv6.conf.all.disable_ipv6=1
+      - net.ipv6.conf.lo.disable_ipv6=1
+    healthcheck:
+      test: ping -c 1 www.google.com || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - vpn
+  qbittorrent:
+    image: qbittorrentofficial/qbittorrent-nox:latest
+    container_name: torrent
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - TZ=${TZ}
+      - QBT_WEBUI_PORT=8082
+      - UMASK=002
+    volumes:
+      - ./docker/appdata/qbittorrent:/config
+      - ./data/torrents:/data/torrents
+    restart: unless-stopped
+    network_mode: "service:vpn"
+    depends_on:
+      vpn:
+        condition: service_healthy
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    network_mode: host
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - TZ=${TZ}
+      - VERSION=docker
+      #- PLEX_CLAIM=${PLEX_CLAIM}
+    volumes:
+      - ./docker/appdata/plexconfig:/config
+      - ./data/media:/data/media
+    restart: unless-stopped
+    depends_on:
+      vpn:
+        condition: service_healthy
+  radarr:
+    image: linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - TZ=${TZ}
+      - UMASK=002
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./docker/appdata/radarr:/config
+      - ./data:/data
+    restart: unless-stopped
+    network_mode: service:vpn
+    depends_on:
+      - qbittorrent
+  sonarr:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - TZ=${TZ}
+      - UMASK=002
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./docker/appdata/sonarr:/config
+      - ./data:/data
+    restart: unless-stopped
+    network_mode: service:vpn
+    depends_on:
+      - qbittorrent
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - TZ=${TZ}
+      - UMASK=002
+    volumes:
+      - ./docker/appdata/prowlarr:/config
+    restart: unless-stopped
+    network_mode: service:vpn
+    depends_on:
+      - qbittorrent
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - TZ=${TZ}
+    volumes:
+      - ./docker/appdata/overseerr:/config
+    network_mode: service:vpn
+    restart: unless-stopped
+    depends_on:
+      - qbittorrent
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    container_name: duckdns
+    network_mode: host
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - TZ=${TZ}
+      - SUBDOMAINS=${DDNS_DOMAIN}
+      - TOKEN=${DUCKDNS_TOKEN}
+      - UPDATE_IP=ipv4
+      - LOG_FILE=true
+    volumes:
+      - ./docker/appdata/duckdns/config:/config
+    restart: unless-stopped
+networks:
+  vpn:
+
+

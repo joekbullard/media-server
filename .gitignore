@@ -1,0 +1,5 @@
+docker/
+pia/
+pia-shared/
+.env
+data/
