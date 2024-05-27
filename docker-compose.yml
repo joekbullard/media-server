@@ -1,3 +1,4 @@
+
 services:
   vpn:
     image: thrnz/docker-wireguard-pia
@@ -44,7 +45,7 @@ services:
       - UMASK=002
     volumes:
       - ./docker/appdata/qbittorrent:/config
-      - ./data/torrents:/data/torrents
+      - /mnt/sdb1/data/torrents:/data/torrents
     restart: unless-stopped
     network_mode: "service:vpn"
     depends_on:
@@ -62,7 +63,7 @@ services:
       #- PLEX_CLAIM=${PLEX_CLAIM}
     volumes:
       - ./docker/appdata/plexconfig:/config
-      - ./data/media:/data/media
+      - /mnt/sdb1/data/media:/data/media
     restart: unless-stopped
     depends_on:
       vpn:
@@ -78,7 +79,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./docker/appdata/radarr:/config
-      - ./data:/data
+      - /mnt/sdb1/data:/data
     restart: unless-stopped
     network_mode: service:vpn
     depends_on:
@@ -94,7 +95,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./docker/appdata/sonarr:/config
-      - ./data:/data
+      - /mnt/sdb1/data:/data
     restart: unless-stopped
     network_mode: service:vpn
     depends_on:
@@ -122,26 +123,32 @@ services:
       - TZ=${TZ}
     volumes:
       - ./docker/appdata/overseerr:/config
-    network_mode: service:vpn
     restart: unless-stopped
     depends_on:
       - qbittorrent
-  duckdns:
-    image: lscr.io/linuxserver/duckdns:latest
-    container_name: duckdns
-    network_mode: host
+  swag:
+    image: lscr.io/linuxserver/swag
+    container_name: swag
+    cap_add:
+      - NET_ADMIN
     environment:
       - PUID=${UID}
       - PGID=${GID}
       - TZ=${TZ}
-      - SUBDOMAINS=${DDNS_DOMAIN}
-      - TOKEN=${DUCKDNS_TOKEN}
-      - UPDATE_IP=ipv4
-      - LOG_FILE=true
+      - URL=${URL}
+      - DUCKDNSTOKEN=${DUCKDNS_TOKEN}
+      - CERTPROVIDER=zerossl
+      - EMAIL=${ZEROSSL_EMAIL}
+      - SUBDOMAINS=${SUBDOMAINS}
+      - ONLY_SUBDOMAINS=true
+      - VALIDATION=http
     volumes:
-      - ./docker/appdata/duckdns/config:/config
+      - ./docker/appdata/swag:/config
+    ports:
+      - 443:443
+      - 80:80
     restart: unless-stopped
+    depends_on:
+      - overseerr
 networks:
   vpn:
-
-
