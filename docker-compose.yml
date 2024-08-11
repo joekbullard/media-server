@@ -11,7 +11,6 @@ services:
       - 7878:7878
       - 9696:9696
       - 8989:8989
-      - 5055:5055
     cap_add:
       - NET_ADMIN
     environment:
@@ -121,34 +120,12 @@ services:
       - PUID=${UID}
       - PGID=${GID}
       - TZ=${TZ}
+    ports:
+      - 5055:5055
     volumes:
       - ./docker/appdata/overseerr:/config
     restart: unless-stopped
     depends_on:
       - qbittorrent
-  swag:
-    image: lscr.io/linuxserver/swag
-    container_name: swag
-    cap_add:
-      - NET_ADMIN
-    environment:
-      - PUID=${UID}
-      - PGID=${GID}
-      - TZ=${TZ}
-      - URL=${URL}
-      - DUCKDNSTOKEN=${DUCKDNS_TOKEN}
-      - CERTPROVIDER=zerossl
-      - EMAIL=${ZEROSSL_EMAIL}
-      - SUBDOMAINS=${SUBDOMAINS}
-      - ONLY_SUBDOMAINS=true
-      - VALIDATION=http
-    volumes:
-      - ./docker/appdata/swag:/config
-    ports:
-      - 443:443
-      - 80:80
-    restart: unless-stopped
-    depends_on:
-      - overseerr
 networks:
   vpn:
