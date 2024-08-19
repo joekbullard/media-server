@@ -8,9 +8,9 @@ services:
       - ./script.sh:/script.sh
     ports:
       - 8082:8082
-      - 7878:7878
+    #  - 7878:7878
       - 9696:9696
-      - 8989:8989
+    #  - 8989:8989
     cap_add:
       - NET_ADMIN
     environment:
@@ -70,6 +70,8 @@ services:
   radarr:
     image: linuxserver/radarr:latest
     container_name: radarr
+    ports:
+      - 7878:7878
     environment:
       - PUID=${UID}
       - PGID=${GID}
@@ -80,12 +82,14 @@ services:
       - ./docker/appdata/radarr:/config
       - /mnt/sdb1/data:/data
     restart: unless-stopped
-    network_mode: service:vpn
+    #network_mode: service:vpn
     depends_on:
       - qbittorrent
   sonarr:
     image: linuxserver/sonarr:latest
     container_name: sonarr
+    ports:
+      - 8989:8989
     environment:
       - PUID=${UID}
       - PGID=${GID}
@@ -96,7 +100,7 @@ services:
       - ./docker/appdata/sonarr:/config
       - /mnt/sdb1/data:/data
     restart: unless-stopped
-    network_mode: service:vpn
+    #network_mode: service:vpn
     depends_on:
       - qbittorrent
   prowlarr:
