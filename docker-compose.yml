@@ -5,7 +5,7 @@ services:
     volumes:
       - ./pia:/pia
       - ./pia-shared:/pia-shared
-      - ./script.sh:/script.sh
+      - ./set_qbt_port.sh:/set_qbt_port.sh
     ports:
       - 8080:8080
       - 9696:9696
@@ -19,6 +19,10 @@ services:
       - PORT_FORWARDING=1
       - KEEPALIVE=25
       - PORT_PERSIST=1
+      - PORT_SCRIPT=${PORT_SCRIPT}
+      - QBT_USER=${QBT_USER}
+      - QBT_PASS=$(QBT_PASS)
+      - QBT_PORT=${QBT_PORT}
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
       - net.ipv6.conf.default.disable_ipv6=1
@@ -45,9 +49,6 @@ services:
       - /mnt/sdb1/data/torrents:/data/torrents
     restart: unless-stopped
     network_mode: "service:vpn"
-    depends_on:
-      vpn:
-        condition: service_healthy
   plex:
     image: lscr.io/linuxserver/plex:latest
     container_name: plex
