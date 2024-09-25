@@ -7,10 +7,8 @@ services:
       - ./pia-shared:/pia-shared
       - ./script.sh:/script.sh
     ports:
-      - 8082:8082
-    #  - 7878:7878
+      - 8080:8080
       - 9696:9696
-    #  - 8989:8989
     cap_add:
       - NET_ADMIN
     environment:
@@ -34,13 +32,13 @@ services:
     networks:
       - vpn
   qbittorrent:
-    image: qbittorrentofficial/qbittorrent-nox:latest
+    image: lscr.io/linuxserver/qbittorrent:latest
     container_name: torrent
     environment:
       - PUID=${UID}
       - PGID=${GID}
       - TZ=${TZ}
-      - QBT_WEBUI_PORT=8082
+      - WEBUI_PORT=8080
       - UMASK=002
     volumes:
       - ./docker/appdata/qbittorrent:/config
@@ -59,7 +57,6 @@ services:
       - PGID=${GID}
       - TZ=${TZ}
       - VERSION=docker
-      #- PLEX_CLAIM=${PLEX_CLAIM}
     volumes:
       - ./docker/appdata/plexconfig:/config
       - /mnt/sdb1/data/media:/data/media
@@ -82,7 +79,6 @@ services:
       - ./docker/appdata/radarr:/config
       - /mnt/sdb1/data:/data
     restart: unless-stopped
-    #network_mode: service:vpn
     depends_on:
       - qbittorrent
   sonarr:
@@ -100,7 +96,6 @@ services:
       - ./docker/appdata/sonarr:/config
       - /mnt/sdb1/data:/data
     restart: unless-stopped
-    #network_mode: service:vpn
     depends_on:
       - qbittorrent
   prowlarr:
@@ -131,5 +126,13 @@ services:
     restart: unless-stopped
     depends_on:
       - qbittorrent
+  tunnel:
+    image: cloudflare/cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CF_TOKEN}
+    depends_on:
+      - overseerr
 networks:
   vpn:
