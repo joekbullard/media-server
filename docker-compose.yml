@@ -2,6 +2,8 @@
 services:
   vpn:
     image: thrnz/docker-wireguard-pia
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     volumes:
       - ./pia:/pia
       - ./pia-shared:/pia-shared
@@ -37,6 +39,8 @@ services:
       - vpn
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"    
     container_name: torrent
     environment:
       - PUID=${UID}
@@ -49,15 +53,47 @@ services:
       - /mnt/sdb1/data/torrents:/data/torrents
     restart: unless-stopped
     network_mode: "service:vpn"
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - TZ=${TZ}
+    ports:
+      - 4533:4533
+    restart: unless-stopped
+    volumes:
+      - ./docker/appdata/navidrome:/data
+      - /mnt/sdb1/data/media/music:/music:ro
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    environment:
+      - PUID=${UID}
+      - PGID=${GID}
+      - TZ=${TZ}
+      - UMASK=002
+    volumes:
+      - ./docker/appdata/lidarr:/config
+      - /mnt/sdb1/data:/data
+    ports:
+      - 8686:8686
+    restart: unless-stopped
+    depends_on:
+      - qbittorrent
   plex:
     image: lscr.io/linuxserver/plex:latest
-    container_name: plex
+    container_name: plex    
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     network_mode: host
     environment:
       - PUID=${UID}
       - PGID=${GID}
       - TZ=${TZ}
       - VERSION=docker
+      - PLEX_CLAIM=${PLEX_CLAIM_TOKEN}
     volumes:
       - ./docker/appdata/plexconfig:/config
       - /mnt/sdb1/data/media:/data/media
@@ -68,6 +104,8 @@ services:
   radarr:
     image: linuxserver/radarr:latest
     container_name: radarr
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     ports:
       - 7878:7878
     environment:
@@ -85,6 +123,8 @@ services:
   sonarr:
     image: linuxserver/sonarr:latest
     container_name: sonarr
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"    
     ports:
       - 8989:8989
     environment:
@@ -102,6 +142,8 @@ services:
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"    
     environment:
       - PUID=${UID}
       - PGID=${GID}
@@ -116,6 +158,8 @@ services:
   overseerr:
     image: lscr.io/linuxserver/overseerr:latest
     container_name: overseerr
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"    
     environment:
       - PUID=${UID}
       - PGID=${GID}
@@ -129,6 +173,8 @@ services:
       - qbittorrent
   tunnel:
     image: cloudflare/cloudflared
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"    
     restart: unless-stopped
     command: tunnel run
     environment:
